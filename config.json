@@ -1,0 +1,23 @@
+{
+  "previewArea": {
+    "start": {
+      "x": 0,
+      "y": 0
+    },
+    "end": {
+      "x": 30,
+      "y": 30
+    }
+  },
+  "radiusToSend": 16,
+  "onlineMode": true,
+  "port": 25580,
+  "regionFiles": "region/",
+  "showServerCredits": true,
+  "motd": "§7Welcome to an example §6§lScaffoldingMC Map Preview!§7!",
+  "icon": {
+    "enabled": true,
+    "path": "icon.png"
+  },
+  "timeOfDay": 0
+}
