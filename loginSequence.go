@@ -5,16 +5,17 @@ import (
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type YggdrasilResponse struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
 }
-
 
 func sendLoginSuccess(s *Session, offline bool) {
 	if offline == true {
@@ -40,9 +41,9 @@ func sendLoginSuccess(s *Session, offline bool) {
 	// Send join game
 	joinPacket := []byte{
 		0, 0, 0, 0, // Player entity ID (always 0)
-		3, // Gamemode 3
+		3,          // Gamemode 3
 		0, 0, 0, 0, // Overworld TODO: Support other dimensions
-		0, 0, 0, 0, 0, 0, 0, 0, 0,// i have no idea what this is for...
+		0, 0, 0, 0, 0, 0, 0, 0, 0, // i have no idea what this is for...
 	}
 	levelType, _ := writeString("default")
 	renderDistance, _ := writeVarInt(config.RadiusToSend)
@@ -70,16 +71,19 @@ func sendLoginSuccess(s *Session, offline bool) {
 	posPacket = append(posPacket, 0, 15)
 
 	s.sendPacket(54, posPacket)
+	s.sendPacket(0x41, []byte{3, 3})
 
-	for i := 0; i < 13; i++ {
-		for j := 0; j < 13; j++ {
+	for i := 0; i < 20; i++ {
+		for j := 0; j < 20; j++ {
 			s.sendPacket(0x22, chunkCache[578][i][j])
+			fmt.Println(i, j)
+			time.Sleep(time.Millisecond * 30)
 			//s.sendPacket(0x41, []byte{byte(i), byte(j)})
 		}
+
 	}
 
-
-//	fmt.Println(hex.Dump(chunkCache[578][3][3]))
+	//	fmt.Println(hex.Dump(chunkCache[578][3][3]))
 
 	s.sendPacket(0x41, []byte{3, 3})
 
@@ -115,10 +119,10 @@ func loginStart(s *Session, packet []byte) {
 
 func loginVerify(s *Session, packet []byte) {
 	var ptr = 0
-	encryptedSharedSecret, ptr 	:= readByteArray(packet, ptr)
-	encryptedVerifyToken , ptr 	:= readByteArray(packet, ptr)
+	encryptedSharedSecret, ptr := readByteArray(packet, ptr)
+	encryptedVerifyToken, ptr := readByteArray(packet, ptr)
 
-	decryptedVerifyToken, err  	:= PrivateKey.Decrypt(rand.Reader, encryptedVerifyToken, nil)
+	decryptedVerifyToken, err := PrivateKey.Decrypt(rand.Reader, encryptedVerifyToken, nil)
 	if err != nil {
 		s.disconnect()
 	}
@@ -150,7 +154,7 @@ func loginVerify(s *Session, packet []byte) {
 	var response YggdrasilResponse
 	json.Unmarshal(body, &response)
 
-	if len(response.Id) < 8  { // Safe to say we have a suspicious one going on.
+	if len(response.Id) < 8 { // Safe to say we have a suspicious one going on.
 		s.disconnect()
 	}
 

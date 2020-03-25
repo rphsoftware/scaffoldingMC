@@ -6,21 +6,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math"
-	"net/http"
-	_ "net/http/pprof"
 	"strconv"
 	"sync"
 	"time"
 )
 
-var icon string		 = ""
+var icon string = ""
 var chunkCache = make(map[int]map[int]map[int][]byte)
 var chunkLock sync.Mutex
 
-
 var lastLog = time.Now()
 
-func log(a... interface{}) {
+func log(a ...interface{}) {
 	a = append(a, []interface{}{"|", time.Since(lastLog)}...)
 	lastLog = time.Now()
 	fmt.Println(a...)
@@ -48,7 +45,7 @@ func main() {
 
 	for i := config.PreviewArea.Start.X; i <= config.PreviewArea.End.X; i++ {
 		for j := config.PreviewArea.Start.Y; j <= config.PreviewArea.End.Y; j++ {
-			name := "r." + strconv.Itoa(int(math.Floor(float64(i) / 32))) + "." + strconv.Itoa(int(math.Floor(float64(j) / 32))) + ".mca"
+			name := "r." + strconv.Itoa(int(math.Floor(float64(i)/32))) + "." + strconv.Itoa(int(math.Floor(float64(j)/32))) + ".mca"
 			requiredRegionFiles[name] = []int{
 				int(math.Floor(float64(i) / 32)),
 				int(math.Floor(float64(j) / 32)),
@@ -59,7 +56,7 @@ func main() {
 	for i, _ := range requiredRegionFiles {
 		data, err := ioutil.ReadFile(config.RegionFiles + i)
 		if err != nil {
-			log("An error occured while reading", config.RegionFiles + i, err )
+			log("An error occured while reading", config.RegionFiles+i, err)
 			return
 		}
 		regionFiles[i] = data
@@ -71,28 +68,38 @@ func main() {
 	for i := config.PreviewArea.Start.X; i <= config.PreviewArea.End.X; i++ {
 		compressedChunkLine := make(map[int][]byte)
 		for j := config.PreviewArea.Start.Y; j <= config.PreviewArea.End.Y; j++ {
-			name := "r." + strconv.Itoa(int(math.Floor(float64(i) / 32))) + "." + strconv.Itoa(int(math.Floor(float64(j) / 32))) + ".mca"
+			name := "r." + strconv.Itoa(int(math.Floor(float64(i)/32))) + "." + strconv.Itoa(int(math.Floor(float64(j)/32))) + ".mca"
 			data := regionFiles[name]
 			//offsetToEntry := int(math.Abs(( float64(i % 32) ) + ( float64(j % 32) * 32) * 4))
 			var offsetToEntry int
 
-			offsetToEntry = ((int(math.Abs(float64(i))) % 32) + ((int(math.Abs(float64(j))) % 32) * 32)) * 4
+			var ii = int(math.Abs(float64(i)))
+			var jj = int(math.Abs(float64(j)))
 
+			// Hack to make negative coords work. It sucks but it works!
+			if i < 0 {
+				ii = ii % 32
+				ii = 32 - ii
+			}
 
-			entry := data[offsetToEntry : offsetToEntry + 4]
+			if j < 0 {
+				jj = jj % 32
+				jj = 32 - jj
+			}
+
+			offsetToEntry = ((int(math.Abs(float64(ii))) % 32) + ((int(math.Abs(float64(jj))) % 32) * 32)) * 4
+			entry := data[offsetToEntry : offsetToEntry+4]
 
 			offset := (int(entry[0]) * 65536) + (int(entry[1]) * 256) + int(entry[2])
 			offset *= 4096
 			size := int(entry[3])
 			size *= 4096
 
-			compressedChunkLine[(j - config.PreviewArea.Start.Y)] = data[offset : offset + size]
+			compressedChunkLine[(j - config.PreviewArea.Start.Y)] = data[offset : offset+size]
 		}
 		compressedChunks[(i - config.PreviewArea.Start.X)] = compressedChunkLine
 	}
-	go func() {
-		fmt.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
+
 	log("Chunks read into lookup table.")
 	if config.Icon.Enabled {
 		log("Loading icon...")
@@ -109,7 +116,6 @@ func main() {
 	compressedChunks = nil
 
 	log("Starting minecraft server")
-
 
 	runServer()
 }

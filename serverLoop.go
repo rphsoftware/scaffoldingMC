@@ -11,19 +11,20 @@ import (
 )
 
 type ChunkWorkerCommand int
+
 const (
-	CW_NEW_CHUNK	ChunkWorkerCommand = 0
-	CW_DIE			ChunkWorkerCommand = 1
+	CW_NEW_CHUNK ChunkWorkerCommand = 0
+	CW_DIE       ChunkWorkerCommand = 1
 )
 
 type Session struct {
-	stage 					int
-	connection 				net.Conn
+	stage      int
+	connection net.Conn
 
 	// player info
-	playerUsername  		string
-	encryptionVerifyToken	[]byte
-	loginStage				int
+	playerUsername        string
+	encryptionVerifyToken []byte
+	loginStage            int
 
 	// Encryption related
 	clientBoundCryptoStream cipher.Stream
@@ -31,27 +32,27 @@ type Session struct {
 	encryptionEnabled       bool
 
 	// Player info
-	playerUUID				uuid.UUID
-	playerUUIDDashed		string
+	playerUUID       uuid.UUID
+	playerUUIDDashed string
 
-	xPosition				float64
-	yPosition				float64
-	zPosition				float64
+	xPosition float64
+	yPosition float64
+	zPosition float64
 
-	xChunk					int
-	zChunk					int
+	xChunk int
+	zChunk int
 
 	// Compression info
-	compressionEnabled 		bool
-	compressionThreshold	int
+	compressionEnabled   bool
+	compressionThreshold int
 
 	// Packet mutex
-	packetLock				sync.Mutex
-	_kc						chan bool
+	packetLock sync.Mutex
+	_kc        chan bool
 }
 
 type ChunkWorkerPacket struct {
-	s 		*Session
+	s       *Session
 	command ChunkWorkerCommand
 }
 
@@ -73,7 +74,6 @@ func (s *Session) sendPacket(id byte, data []byte) {
 		compressedPacket := []byte{id}
 		compressedPacket = append(compressedPacket, data...)
 
-
 		if len(compressedPacket) < s.compressionThreshold {
 			dataLen, _ := writeVarInt(0)
 			compressedPacket = append(dataLen, compressedPacket...)
@@ -82,6 +82,7 @@ func (s *Session) sendPacket(id byte, data []byte) {
 			var b bytes.Buffer
 			compressedWriter := zlib.NewWriter(&b)
 			compressedWriter.Write(compressedPacket)
+			compressedWriter.Flush()
 			compressedWriter.Close()
 
 			compressedPacket = b.Bytes()
@@ -92,8 +93,6 @@ func (s *Session) sendPacket(id byte, data []byte) {
 		compressedPacketSize, _ := writeVarInt(len(compressedPacket))
 		packet = append(compressedPacketSize, compressedPacket...)
 	}
-
-
 
 	if s.encryptionEnabled == true {
 		s.clientBoundCryptoStream.XORKeyStream(packet, packet)
@@ -154,7 +153,7 @@ func serverLoop(connection net.Conn) {
 			var packetLength int
 			packetLength, pointer = readVarInt(packet, pointer)
 			packetId, pointer = readVarInt(packet, pointer)
-			packetData = packet[pointer : packetLength + pointer - 1]
+			packetData = packet[pointer : packetLength+pointer-1]
 		} else {
 			var packetLength int
 			packetLength, pointer = readVarInt(packet, pointer)
@@ -166,7 +165,7 @@ func serverLoop(connection net.Conn) {
 
 			if decompressedLength == 0 {
 				packetId, pointer = readVarInt(packet, pointer)
-				packetData = packet[pointer : packetLength + pointer - size - 1]
+				packetData = packet[pointer : packetLength+pointer-size-1]
 			} else {
 				packetLength -= size
 				compressedData := packet[pointer : pointer+packetLength]
@@ -197,7 +196,7 @@ func serverLoop(connection net.Conn) {
 			}
 
 			if packetId == 15 {
-				dataChannel	 <- packetData
+				dataChannel <- packetData
 				continue
 			}
 		}

@@ -31,7 +31,7 @@ func runServer() {
 	}
 	log("Opening TCP socket")
 
-	ln, err := net.Listen("tcp", ":" + strconv.Itoa(config.Port))
+	ln, err := net.Listen("tcp", ":"+strconv.Itoa(config.Port))
 	if err != nil {
 		log("Error occured while trying to open TCP port!")
 		panic(err)

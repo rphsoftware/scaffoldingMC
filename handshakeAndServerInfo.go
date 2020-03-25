@@ -88,11 +88,11 @@ func handshakeHandler(s *Session, packetId int, packet []byte) {
 	if s.stage == 1 {
 		if packetId == 0 {
 			newData := ServerInfo{
-				Version:     ServerInfoVersion{
-					Protocol: 	578,
-					Name: 		"1.15.2",
+				Version: ServerInfoVersion{
+					Protocol: 578,
+					Name:     "1.15.2",
 				},
-				Players:     ServerInfoPlayers{
+				Players: ServerInfoPlayers{
 					100,
 					0,
 					[]ServerInfoPlayersSample{},

@@ -14,15 +14,15 @@ import (
 
 type HeightMap struct {
 	MotionBlocking         []uint64 `nbt:"MOTION_BLOCKING"`
-	MotionBlockingNoLeaves []int64 `nbt:"MOTION_BLOCKING_NO_LEAVES"`
-	OceanFloor             []int64 `nbt:"OCEAN_FLOOR"`
-	OceanFloorWG           []int64 `nbt:"OCEAN_FLOOR_WG"`
-	WorldSurface           []int64 `nbt:"WORLD_SURFACE"`
-	WorldSurfaceWG         []int64 `nbt:"WORLD_SURFACE_WG"`
+	MotionBlockingNoLeaves []int64  `nbt:"MOTION_BLOCKING_NO_LEAVES"`
+	OceanFloor             []int64  `nbt:"OCEAN_FLOOR"`
+	OceanFloorWG           []int64  `nbt:"OCEAN_FLOOR_WG"`
+	WorldSurface           []int64  `nbt:"WORLD_SURFACE"`
+	WorldSurfaceWG         []int64  `nbt:"WORLD_SURFACE_WG"`
 }
 
 type CleanHeightMap struct {
-	MotionBlocking	[36]uint64 `nbt:"MOTION_BLOCKING"`
+	MotionBlocking [36]uint64 `nbt:"MOTION_BLOCKING"`
 }
 
 type PaletteEntry struct {
@@ -68,15 +68,16 @@ type CleanSection struct {
 }
 
 type ChunkEmissionJob struct {
-	x 		int
-	z 		int
-	reg 	int
-	data 	[]byte
+	x    int
+	z    int
+	reg  int
+	data []byte
 }
 
 // TODO: Multithread the shit out of this!!!!
 
 var size int = 0
+
 //
 //func parseChunkAndEmitPacket(x int, z int, reg int, chunkData NBTChunk) { // Test code
 //	finalChunk := make([]byte, 316155)
@@ -181,14 +182,14 @@ func parseChunkAndEmitPacket(x int, z int, reg int, chunkData NBTChunk) { // 1.1
 		value -= a * 16777216
 
 		a = value >> 16
-		finalChunk[packetPointer+ 1] = byte(a)
+		finalChunk[packetPointer+1] = byte(a)
 		value -= a * 65536
 
 		a = value >> 8
-		finalChunk[packetPointer+ 2] = byte(a)
+		finalChunk[packetPointer+2] = byte(a)
 		value -= a * 256
 
-		finalChunk[packetPointer+ 3] = byte(value)
+		finalChunk[packetPointer+3] = byte(value)
 
 		packetPointer += 4
 	}
@@ -229,16 +230,16 @@ func parseChunkAndEmitPacket(x int, z int, reg int, chunkData NBTChunk) { // 1.1
 			if len(sectionBlocks) <= 16 {
 				absolutePalette = false
 				mappedPaletteEntrySize = 4
-			}  else if len(sectionBlocks) > 16 && len(sectionBlocks) <= 256 {
+			} else if len(sectionBlocks) > 16 && len(sectionBlocks) <= 256 {
 				absolutePalette = false
-				mappedPaletteEntrySize = 8
+				mappedPaletteEntrySize = int(math.Ceil(math.Log2(float64(len(sectionBlocks)))))
 			} else {
 				absolutePalette = true
 				mappedPaletteEntrySize = 14
 			}
 
 			// Load block states into a virtual data object
-			byteData := make([]byte, len(section.BlockStates) * 8)
+			byteData := make([]byte, len(section.BlockStates)*8)
 			byteBit := make([]byte, 8)
 
 			for v := 0; v < len(section.BlockStates); v++ {
@@ -262,7 +263,6 @@ func parseChunkAndEmitPacket(x int, z int, reg int, chunkData NBTChunk) { // 1.1
 			// Calculate non-air blocks
 			var nonAirBlocks int16 = 0
 
-
 			for _, blockState := range blockStates.Entries {
 				if blockState != 0 {
 					nonAirBlocks++
@@ -273,21 +273,21 @@ func parseChunkAndEmitPacket(x int, z int, reg int, chunkData NBTChunk) { // 1.1
 			lowerByte := byte((nonAirBlocks) - (int16(topByte) * 256))
 
 			fullChunkData[fullChunkDataPtr] = topByte
-			fullChunkData[fullChunkDataPtr + 1] = lowerByte
-			fullChunkData[fullChunkDataPtr + 2] = byte(mappedPaletteEntrySize)
+			fullChunkData[fullChunkDataPtr+1] = lowerByte
+			fullChunkData[fullChunkDataPtr+2] = byte(mappedPaletteEntrySize)
 			fullChunkDataPtr += 3
 
 			if absolutePalette == false {
 				// Write palette
 				cache, size = writeVarInt(len(sectionBlocks))
-				copy(fullChunkData[fullChunkDataPtr:fullChunkDataPtr + size], cache)
+				copy(fullChunkData[fullChunkDataPtr:fullChunkDataPtr+size], cache)
 				fullChunkDataPtr += size
 
 				for _, paletteEntry := range sectionBlocks {
 					registryId := registry[reg].blockStates[paletteEntry]
 					cache, size = writeVarInt(registryId)
 
-					copy(fullChunkData[fullChunkDataPtr:fullChunkDataPtr + size], cache)
+					copy(fullChunkData[fullChunkDataPtr:fullChunkDataPtr+size], cache)
 					fullChunkDataPtr += size
 				}
 			}
@@ -295,7 +295,7 @@ func parseChunkAndEmitPacket(x int, z int, reg int, chunkData NBTChunk) { // 1.1
 			// Calculate size of data array
 			sizeOfData := (mappedPaletteEntrySize * 512) / 8
 			cache, size := writeVarInt(int(sizeOfData))
-			copy(fullChunkData[fullChunkDataPtr:fullChunkDataPtr + size], cache)
+			copy(fullChunkData[fullChunkDataPtr:fullChunkDataPtr+size], cache)
 			fullChunkDataPtr += size
 
 			// Create the actual compacted array for the chunk data
@@ -311,7 +311,7 @@ func parseChunkAndEmitPacket(x int, z int, reg int, chunkData NBTChunk) { // 1.1
 
 			tmp = chunkBlockStates.Serialise()
 
-			copy(fullChunkData[fullChunkDataPtr:fullChunkDataPtr + len(tmp)], tmp)
+			copy(fullChunkData[fullChunkDataPtr:fullChunkDataPtr+len(tmp)], tmp)
 			fullChunkDataPtr += len(tmp)
 		}
 	}
@@ -320,7 +320,7 @@ func parseChunkAndEmitPacket(x int, z int, reg int, chunkData NBTChunk) { // 1.1
 	copy(finalChunk[packetPointer:packetPointer+size], cache)
 	packetPointer += size
 
-	copy(finalChunk[packetPointer:packetPointer + fullChunkDataPtr], fullChunkData)
+	copy(finalChunk[packetPointer:packetPointer+fullChunkDataPtr], fullChunkData)
 	packetPointer += fullChunkDataPtr
 	finalChunk[packetPointer] = 0
 	packetPointer += 1
@@ -373,7 +373,7 @@ func runTaskSet(wg *sync.WaitGroup, jobs []ChunkEmissionJob) {
 
 func chunkGeneration(compressedChunks map[int]map[int][]byte) {
 	for a, _ := range registry {
-		var jobList = make([]ChunkEmissionJob,  len(compressedChunks) * len(compressedChunks[0]))
+		var jobList = make([]ChunkEmissionJob, len(compressedChunks)*len(compressedChunks[0]))
 		var ptr = 0
 		for i := 0; i < len(compressedChunks); i++ {
 			for j := 0; j < len(compressedChunks[i]); j++ {
@@ -382,8 +382,9 @@ func chunkGeneration(compressedChunks map[int]map[int][]byte) {
 
 				entry := compressedChunks[i][j]
 				compressionScheme := entry[4]
+
 				if compressionScheme == 2 {
-					nbtData := entry[5 : ]
+					nbtData := entry[5:]
 
 					job := ChunkEmissionJob{
 						x:    i,
@@ -405,8 +406,8 @@ func chunkGeneration(compressedChunks map[int]map[int][]byte) {
 		var wg sync.WaitGroup
 
 		for i := threadsToStart; i >= 1; i-- {
-			part := jobList[0 : int(math.Floor(float64(len(jobList) / i)))]
-			jobList = jobList[ int(math.Floor(float64(len(jobList) / i))):]
+			part := jobList[0:int(math.Floor(float64(len(jobList)/i)))]
+			jobList = jobList[int(math.Floor(float64(len(jobList)/i))):]
 
 			wg.Add(1)
 

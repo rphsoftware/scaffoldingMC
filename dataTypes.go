@@ -78,7 +78,6 @@ func readByteArray(data []byte, offset int) ([]byte, int) {
 	return output, offset
 }
 
-
 func float64ToByte(f float64) []byte {
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.BigEndian, f)
