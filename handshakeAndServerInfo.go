@@ -74,7 +74,7 @@ func handshakeHandler(s *Session, packetId int, packet []byte) {
 		_, ok := registry[protocolVersion]
 
 		if nextState == 2 && ok != true {
-			disconnectPacket, size := writeString("{\"text\":\"§3K§2i§3l§4l §5y§6o§7u§8r§9s§3e§al§bf §cr§ee§ft§3a§2r§3d§4!\"}")
+			disconnectPacket, size := writeString("{\"text\":\"§3Scaffolding only supports 1.15.2!\"}")
 			disconnectPacketSize, _ := writeVarInt(size + 1)
 			adisconnectPacket := append(disconnectPacketSize, 0)
 			adisconnectPacket = append(adisconnectPacket, disconnectPacket...)
