@@ -55,6 +55,10 @@ func sendLoginSuccess(s *Session, offline bool) {
 
 	// Send server brand
 
+	pack1, _ := writeString("minecraft:brand")
+	pack2, _ := writeString("ScaffoldingMC")
+	pack1 = append(pack1, pack2...)
+	s.sendPacket(0x19, pack1)
 	// TODO: Replace with real code, this is just temporary!!!!!!!!!!!
 
 	positionBuffer := float64ToByte(60)
@@ -90,6 +94,7 @@ func sendLoginSuccess(s *Session, offline bool) {
 	s.sendPacket(54, posPacket)
 
 	s.stage = 3
+
 }
 
 func loginStart(s *Session, packet []byte) {

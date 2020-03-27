@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"sync"
+	"time"
 )
 
 type ChunkWorkerCommand int
@@ -99,6 +100,7 @@ func (s *Session) sendPacket(id byte, data []byte) {
 	}
 
 	_, _ = s.connection.Write(packet)
+	time.Sleep(10 * time.Millisecond)
 	s.packetLock.Unlock()
 }
 
